@@ -4,8 +4,8 @@
 *
 * @package  BingImageImporter
 * @author   Philip Olson <http://github.com/philip>
-* @link     https://github.com/philip/BingImageImporter
-* @version  0.2.0 (beta)
+* @link     https://github.com/philip/FantasySportsTools
+* @version  0.1.0 (beta)
 *
 * @todo Adjust code to follow proper PHP-FIG coding standards
 * @todo Adjust code to follow "PHP The Right Way"
@@ -47,8 +47,8 @@ class BingImageImporter {
 	*
 	* @var integer Maximum number of images to check, defaults to 10.
 	*/
-
 	public $maxcheck = 10;
+
 	/**
 	* Method of search to perform and return.
 	* Set to "random" to return a random result, otherwise the first result is returned.
@@ -82,41 +82,6 @@ class BingImageImporter {
 	private $bing_search_format = "json";
 
 	/**
-	* Cache SQL
-	*
-	* @var array SQL for cache query
-	*/
-	public $cache_sql = array();
-	
-	/**
-	* Cache SQLite DB file path
-	*
-	* @var array SQL for cache query
-	*/
-	public $cache_sqlite_db = "/tmp/player_cache.sqlite3";
-	
-	/**
-	* Enable or disable caching, 
-	*
-	* @var boolean true to enable, or false to disable (default)
-	*/
-	public $cache_enabled = false;
-
-	/**
-	* Only output images that are stored in cache
-	*
-	* @var boolean true to enable, or false to disable (default)
-	*/
-	public $cache_required = false;
-
-	/**
-	* Log 
-	*
-	* @var array Logged information
-	*/
-	public $log = array();
-
-	/**
 	* Base URL for the bing request.
 	*
 	* @var string Bing search URL
@@ -136,7 +101,7 @@ class BingImageImporter {
 	*
 	* @var string  Class version
 	*/
-	const VERSION = "0.2.0";
+	const VERSION = "0.1.0";
 	
 	/**
 	* Constructor checks for required PHP extensions: Curl and JSON
@@ -150,9 +115,6 @@ class BingImageImporter {
 		}
 		if (!function_exists("json_decode")) {
 			trigger_error("The JSON extension is required", E_USER_ERROR);
-		}
-		if ($this->cache_enabled && !class_exists("SQLite3")) {
-			trigger_error("The SQLite3 extension is required when cache is enabled");
 		}
 	}
 	
@@ -187,29 +149,13 @@ class BingImageImporter {
 	/**
 	* Execute a bing image search query
 	* 
-	* @return array Image information for the returned result
+	* @return array Image information for the returned result, or false on failure
 	*/
 	private function executeQuery() {
 
 		if (empty($this->bing_api_key)) {
 			trigger_error('You must set the BING API KEY, similar to "$obj->setApiKey("s8f8j8ajf8sjf8js8jsa9fuasf");"', E_USER_ERROR);
 		}
-		
-		if ($this->cache_enabled) {
-			$this->log[] = "Attempted to get cached image with {$this->query}";
-			$tmp = $this->getCachedImage($this->query);
-			if ($tmp) {
-				$this->log[] = "Found cached image for query {$this->query}";
-				$this->imageinfo = $tmp;
-				return $tmp;
-			}
-		}
-		
-		if ($this->cache_required) {
-			$log[] = "Cache is required.";
-			return false;
-		}
-		
 		$this->setSearchUrl();
 
 		/* @todo Confirm this is correct/ideal */
@@ -220,11 +166,6 @@ class BingImageImporter {
 		curl_setopt($process, CURLOPT_TIMEOUT, 15);
 		curl_setopt($process, CURLOPT_RETURNTRANSFER, TRUE);
 		$response = curl_exec($process);
-		
-		if (false !== strpos($response, "authorization type you provided is not supported")) {
-			trigger_error("Bing is not set up correctly, check your API key", E_USER_ERROR);
-		}
-
 		/* @todo We have a format setting, but assume json... */
 		$response = json_decode($response);
 		
@@ -252,12 +193,6 @@ class BingImageImporter {
 		} else {
 			$pick = 0;
 		}
-		
-		if ($this->cache_enabled) {
-			$this->log[] = "Inserted cached image for query {$this->query}";
-			$this->cacheImages($response->d->results);
-			$this->saveCache();
-		}
 
 		foreach( $response->d->results as $k => $result ) {
 			if ($k !== $pick) {
@@ -270,6 +205,7 @@ class BingImageImporter {
 				$info = array(
 					'url' => $result->Thumbnail->MediaUrl,
 					'content-type' => $result->Thumbnail->ContentType,
+					'extension' => pathinfo($result->Thumbnail->MediaUrl, PATHINFO_EXTENSION),
 					'filesize' => $result->Thumbnail->FileSize,
 					'width' => $result->Thumbnail->Width,
 					'height' => $result->Thumbnail->Height,
@@ -284,11 +220,11 @@ class BingImageImporter {
 					'height' => $result->Height,
 				);
 			}
-			break;
+			return $this->imageinfo = $info;
 		}
-		return $this->imageinfo = $info;
+		return false;
 	}
-
+	
 	/**
 	* Outputs a returned image, in binary form.
 	* This sets header(), so has limited use cases. If headers were already
@@ -341,149 +277,5 @@ class BingImageImporter {
 	*/
 	public function setSearchFormat($format) {
 		$this->bing_search_format = trim($format);
-	}
-
-	/**
-	* Returned desired image, whether it's the thumbnail or
-	* original image
-	*
-	* @param array $info The image information
-	*
-	* @return Desired image information
-	*/
-	public function returnDesiredImage($info) {
-		if ($info['width'] > $this->maxwidth) {
-			$_tmp = array(
-				'url'			=> $info['thumb_url'],
-				'content-type'  => $info['thumb_ct'],
-				'filesize'		=> $info['thumb_filesize'],
-				'width'			=> $info['thumb_width'],
-				'height'		=> $info['thumb_height'],
-			);
-		} else {
-			$_tmp = array(
-				'url'			=> $info['url'],
-				'content-type'  => $info['ct'],
-				'filesize'		=> $info['filesize'],
-				'width'			=> $info['width'],
-				'height'		=> $info['height'],
-			);
-		}
-		return $_tmp;
-	}
-
-	/**
-	* Create Cache table
-	*
-	* @todo check if file exists?
-	* @todo add error handling
-	* 
-	* @return true on success, false on failure
-	*/
-	public function createCacheTable() {
-		if (empty($this->cache_sqlite_db)) {
-			return false;
-		}
-		$db = new SQLite3($this->cache_sqlite_db);
-		$sql = "
-		CREATE TABLE fantasy_player_images (
-		id integer primary key autoincrement, query TEXT, rid INT, thumb_url TEXT, 
-		thumb_ct TEXT, thumb_filesize INT, thumb_width INT, 
-		thumb_height INT, url TEXT, ct TEXT, ext VARCHAR(10), filesize INT, width INT, height INT)";
-		$db->query($sql);
-		return true;
-	}
-
-	/**
-	* Cache a query by saving the results
-	*
-	* @todo Check image widths, return accordingly
-	* 
-	* @return array Cached image information on success, false if not cached or failed
-	*/
-	public function getCachedImage($query) {
-		if (empty($this->cache_sqlite_db)) {
-			return false;
-		}
-		$max = $this->maxcheck;
-
-		$db  = new SQLite3($this->cache_sqlite_db);
-		$sql = "SELECT * FROM fantasy_player_images WHERE query = '". $db->escapeString($query) . "' AND rid < $max ORDER BY RANDOM() LIMIT 1";
-		$res = $db->query($sql);
-		if (!$res) {
-			$log[] = "Query ($sql) Failed\n";
-			return false;
-		}
-		$row = $res->fetchArray(SQLITE3_ASSOC);
-		if ($row) {
-			return $this->returnDesiredImage($row);
-		}
-		$log[] = "Cached image did not exist";
-		return false;
-	}
-
-	/**
-	* Cache a query by saving the results
-	*
-	* @todo Save images locally to disk? Or in binary form? Legality?
-	* 
-	* @return array SQL query
-	*/
-	public function cacheImages($results) {
-		if (empty($this->cache_sqlite_db)) {
-			return false;
-		}
-		$db = new SQLite3($this->cache_sqlite_db);
-		foreach ($results as $k => $result) {
-			$values = array(
-				$this->query,
-				$k,
-				$result->Thumbnail->MediaUrl,
-				$result->Thumbnail->ContentType,
-				$result->Thumbnail->FileSize,
-				$result->Thumbnail->Width,
-				$result->Thumbnail->Height,
-				$result->MediaUrl,
-				$result->ContentType,
-				pathinfo($result->MediaUrl, PATHINFO_EXTENSION),
-				$result->FileSize,
-				$result->Width,
-				$result->Height,
-			);
-			$sql[$k] = "
-				INSERT INTO fantasy_player_images
-				(id, query, rid, thumb_url, thumb_ct, thumb_filesize, thumb_width, thumb_height, url, ct, ext, filesize, width, height)
-				VALUES (NULL, ";
-				foreach ($values as $value) {
-					$sql[$k] .= "'". $db->escapeString($value) . "',";
-				}
-				$sql[$k] = trim($sql[$k], ",");
-				$sql[$k] .= ")";
-		}
-		if (count($sql) < 1) {
-			return false;
-		}
-		$this->cache_sql = $sql;
-		return true;
-	}
-
-	/**
-	* Save cache results to an SQLite database
-	*
-	* @todo check if file exists?
-	* @todo add error handling
-	* @todo check if cache value exists, overwrite?
-	* 
-	* @return true on success, false on failure
-	*/
-	public function saveCache() {
-		if (empty($this->cache_sqlite_db)) {
-			return false;
-		}
-		$db = new SQLite3($this->cache_sqlite_db);
-		foreach ($this->cache_sql as $k => $query) {
-			$db->query($query);
-		}
-		return true;
 	}
 }
