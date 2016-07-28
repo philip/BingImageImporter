@@ -1,13 +1,14 @@
 <?php
-require "../lib/BingImageImporter.php";
+
+require '../lib/BingImageImporter.php';
 
 $bing = new BingImageImporter();
 
 // Your Key
-$bing->setApiKey("YOUR KEY HERE");
+$bing->setApiKey('YOUR KEY HERE');
 
 // Where the sqlite cache database will live
-$bing->cache_sqlite_db = "/tmp/cat_cache.sqlite3";
+$bing->cache_sqlite_db = '/tmp/cat_cache.sqlite3';
 
 // Enable cache
 $bing->cache_enabled = true;
@@ -15,9 +16,9 @@ $bing->cache_enabled = true;
 // Before using cache, set up the table (do this once)
 if (!file_exists($bing->cache_sqlite_db)) {
     if ($bing->createCacheTable()) {
-        echo "INFO: Created cache table at {$bing->cache_sqlite_db}". PHP_EOL;
+        echo "INFO: Created cache table at {$bing->cache_sqlite_db}".PHP_EOL;
     } else {
-        echo "ERROR: Failed to create cache table at {$bing->cache_sqlite_db}. Existing...". PHP_EOL;
+        echo "ERROR: Failed to create cache table at {$bing->cache_sqlite_db}. Existing...".PHP_EOL;
         exit;
     }
 }
@@ -41,14 +42,14 @@ $states = explode("\n", $states);
 foreach ($states as $state) {
     if (!empty($state)) {
         $state = trim($state);
-        
+
         // Set a new query
         $bing->setQuery($state);
-        
+
         // Get image info, which also stores cache. 
         // @todo Well, getting image info to store cache seems crazy but...
         $image = $bing->getImageInfo();
-        echo "INFO: Searched for ". $bing->getQuery() . PHP_EOL;
+        echo 'INFO: Searched for '.$bing->getQuery().PHP_EOL;
     }
 }
 
