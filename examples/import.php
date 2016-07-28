@@ -14,12 +14,12 @@ $bing->cache_enabled = true;
 
 // Before using cache, set up the table (do this once)
 if (!file_exists($bing->cache_sqlite_db)) {
-	if ($bing->createCacheTable()) {
-		echo "INFO: Created cache table at {$bing->cache_sqlite_db}". PHP_EOL;
-	} else {
-		echo "ERROR: Failed to create cache table at {$bing->cache_sqlite_db}. Existing...". PHP_EOL;
-		exit;
-	}
+    if ($bing->createCacheTable()) {
+        echo "INFO: Created cache table at {$bing->cache_sqlite_db}". PHP_EOL;
+    } else {
+        echo "ERROR: Failed to create cache table at {$bing->cache_sqlite_db}. Existing...". PHP_EOL;
+        exit;
+    }
 }
 
 // A list of queries that we'll search for, and add to cache
@@ -39,20 +39,20 @@ $states = explode("\n", $states);
 // the query. Show the log for each query, to see what happened.
 // Execute it a second time to see if the cached versions were loaded
 foreach ($states as $state) {
-	if (!empty($state)) {
-		$state = trim($state);
-		
-		// Set a new query
-		$bing->setQuery($state);
-		
-		// Get image info, which also stores cache. 
-		// @todo Well, getting image info to store cache seems crazy but...
-		$image = $bing->getImageInfo();
-		echo "INFO: Searched for ". $bing->getQuery() . PHP_EOL;
-	}
+    if (!empty($state)) {
+        $state = trim($state);
+        
+        // Set a new query
+        $bing->setQuery($state);
+        
+        // Get image info, which also stores cache. 
+        // @todo Well, getting image info to store cache seems crazy but...
+        $image = $bing->getImageInfo();
+        echo "INFO: Searched for ". $bing->getQuery() . PHP_EOL;
+    }
 }
 
 // The log. Will show if cache was stored, or if images were taken from cache
 if (!empty($bing->log)) {
-	print_r($bing->log);
+    print_r($bing->log);
 }
