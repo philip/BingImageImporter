@@ -170,6 +170,17 @@ class BingImageImporter {
 	}
 
 	/**
+	* Get the search query, namely $this->query
+	*
+	* @param void
+	*
+	* @return string Search string for bing image search
+	*/
+	public function getQuery() {
+		return $this->query;
+	}
+
+	/**
 	* Sets the search URL, namely $this->url
 	* 
 	* @return boolean true on success, false on failure
@@ -205,11 +216,13 @@ class BingImageImporter {
 				$this->log[] = "Found cached image for query {$this->query}";
 				$this->imageinfo = $tmp;
 				return $tmp;
+			} else {
+				$this->log[] = "Did not have cache for {$this->query}, performed a bing search instead";
 			}
 		}
 
 		if ($this->cache_required) {
-			$log[] = "Cache is required.";
+			$this->log[] = "Cache is required";
 			return false;
 		}
 
@@ -300,7 +313,7 @@ class BingImageImporter {
 	* @return void on success, otherwise false
 	*/
 	public function outputImage() {
-		if (empty($this->imageinfo) && !$this->executeQuery()) {
+		if (!$this->executeQuery()) {
 			return false;
 		}
 		if (headers_sent($file, $line)) {
@@ -317,7 +330,7 @@ class BingImageImporter {
 	* @return array Image information on success, false on failure
 	*/
 	public function getImageInfo() {
-		if (empty($this->imageinfo) && !$this->executeQuery()) {
+		if (!$this->executeQuery()) {
 			return false;
 		}
 		return $this->imageinfo;
@@ -415,14 +428,14 @@ class BingImageImporter {
 		$sql = "SELECT * FROM fantasy_player_images WHERE query = '". $db->escapeString($query) . "' AND rid < $max ORDER BY RANDOM() LIMIT 1";
 		$res = $db->query($sql);
 		if (!$res) {
-			$log[] = "Query ($sql) Failed\n";
+			$this->log[] = "Query ($sql) Failed";
 			return false;
 		}
 		$row = $res->fetchArray(SQLITE3_ASSOC);
 		if ($row) {
 			return $this->returnDesiredImage($row);
 		}
-		$log[] = "Cached image did not exist";
+		$this->log[] = "Cached image did not exist";
 		return false;
 	}
 
