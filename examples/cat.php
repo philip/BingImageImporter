@@ -1,6 +1,6 @@
 <?php
 
-require '../lib/BingImageImporter.php';
+require '../src/BingImageImporter.php';
 
 $bing = new BingImageImporter();
 

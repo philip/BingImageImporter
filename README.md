@@ -13,7 +13,7 @@ Several examples live within the examples/ directory, but here another based on 
 
 ```php
 <?php
-require "../lib/BingImageImporter.php";
+require "../src/BingImageImporter.php";
 $bing = new BingImageImporter();
 
 $bing->setApiKey("YOUR KEY HERE");
