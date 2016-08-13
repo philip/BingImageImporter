@@ -1,5 +1,5 @@
-# BingImageImporter
-Fetch images using the Bing Search API. By default, a random image is retrieved, based on your search query. 
+# BingImageSearch
+Fetch images using the Bing Image Search API. By default, a random image is retrieved, based on your search query. 
 
 # The API Key
 To use the Bing Image search, you need a Bing API key. The free version allows 5,000 queries per month. To get this key, go to http://www.bing.com/toolbox/bingsearchapi and request the key. It's a painless process. It's part of the "Windows Azure Marketplace".
@@ -13,8 +13,8 @@ Several examples live within the examples/ directory, but here another based on 
 
 ```php
 <?php
-require "../src/BingImageImporter.php";
-$bing = new BingImageImporter();
+require "../src/BingImageSearch.php";
+$bing = new BingImageSearch();
 
 $bing->setApiKey("YOUR KEY HERE");
 $bing->setQuery("Happy Cat");
@@ -30,10 +30,10 @@ The Bing API Key, and PHP with the JSON and Curl extensions enabled. Optionally,
 # Installation
 Currently, there is not a nice way to install it (e.g., Composer) so it's a matter of downloading then using. For example:
 ```
-$ wget https://github.com/philip/BingImageImporter/archive/master.zip
+$ wget https://github.com/philip/BingImageSearch/archive/master.zip
 $ unzip master.zip
-$ mv BingImageImporter-master BingImageImporter
-$ cd BingImageImporter/examples
+$ mv BingImageSearch-master BingImageSearch
+$ cd BingImageSearch/examples
 $ php cat.php
 ```
 Execution will fail until you set the Bing API Key. Future versions will make that easier, but for now you must edit the code. In the above example, that means adding the API Key to cat.php.

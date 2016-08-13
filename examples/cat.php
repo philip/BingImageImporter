@@ -1,8 +1,8 @@
 <?php
 
-require '../src/BingImageImporter.php';
+require '../src/BingImageSearch.php';
 
-$bing = new BingImageImporter();
+$bing = new BingImageSearch();
 
 // Your Key
 $bing->setApiKey('YOUR KEY HERE');

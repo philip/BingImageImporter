@@ -2,9 +2,9 @@
 /*
 * Return a somewhat random image from Bing images, using their API
 *
-* @package  BingImageImporter
+* @package  BingImageSearch
 * @author   Philip Olson <http://github.com/philip>
-* @link     https://github.com/philip/BingImageImporter
+* @link     https://github.com/philip/BingImageSearch
 * @version  0.2.0 (beta)
 *
 * @todo Adjust code to follow proper PHP-FIG coding standards
@@ -14,7 +14,7 @@
 *
 * Examples:
 * * Initiate the class
-*    $obj = new BingImageImporter();
+*    $obj = new BingImageSearch();
 
 * * Set the API KEY
 * * You get this from http://www.bing.com/toolbox/bingsearchapi
@@ -32,7 +32,7 @@
 *    echo $info['url'];
 *    print_r($info);
 */
-class BingImageImporter
+class BingImageSearch
 {
     /**
      * Maximum image width of returned images. If exceeded, the 
