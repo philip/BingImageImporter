@@ -1,0 +1,24 @@
+{
+	"name": "Philip/Bing",
+	"description": "Uses the Bing image search API to find images",
+	"keywords": ["Bing", "Image", "Search", "API"],
+	"homepage": "https://github.com/philip/BingImageSearch",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Philip Olson",
+			"email": "philip@roshambo.org",
+			"homepage": "https://github.com/philip",
+			"role": "Developer"
+		}
+	],
+	"require": {
+		"php": ">=5.3.2",
+		"ext-sqlite3": "*"
+	},
+	"autoload": {
+		"psr-4": {
+			"Philip\\": "src"
+		}
+	}
+}
