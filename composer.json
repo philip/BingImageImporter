@@ -1,5 +1,5 @@
 {
-	"name": "Philip/Bing",
+	"name": "philip/bingimagesearch",
 	"description": "Uses the Bing image search API to find images, and optionally cache results",
 	"keywords": ["Bing", "Image", "Search", "API"],
 	"homepage": "https://github.com/philip/BingImageSearch",
