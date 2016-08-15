@@ -1,59 +1,48 @@
 <?php
+/**
+ * When using composer, do this instead
+ * require __DIR__ . "/../vendor/autoload.php";
+*/
+require __DIR__ . "/../src/BingImageSearch.php";
 
-require '../src/BingImageSearch.php';
-
-$bing = new BingImageSearch();
+$bing = new Philip\BingImageSearch();
 
 // Your Key
-$bing->setApiKey('YOUR KEY HERE');
+$bing->setApiKey('YOUR API KEY HERE');
 
-// Where the sqlite cache database will live
-$bing->cache_sqlite_db = '/tmp/cat_cache.sqlite3';
-
-// Enable cache
-$bing->cache_enabled = true;
-
-// Before using cache, set up the table (do this once)
-if (!file_exists($bing->cache_sqlite_db)) {
-    if ($bing->createCacheTable()) {
-        echo "INFO: Created cache table at {$bing->cache_sqlite_db}".PHP_EOL;
-    } else {
-        echo "ERROR: Failed to create cache table at {$bing->cache_sqlite_db}. Existing...".PHP_EOL;
-        exit;
-    }
-}
+// Let's enable cache
+$bing->enableCache('/tmp/bing_result_cache.sqlite3');
 
 // A list of queries that we'll search for, and add to cache
 // This might come from a file, or anywhere, really
-$states = <<<CAT_STATES
+$catmoods = <<<CAT_MOODS
 Happy Cat
 Sad Cat
 Playful Cat
 Bad Cat
 Good Cat
-CAT_STATES;
+CAT_MOODS;
 
 // Turn our cat state list into an array.
-$states = explode("\n", $states);
+$queries = explode("\n", $catmoods);
 
 // With cache enabled, executing searches will automatically cache
 // the query. Show the log for each query, to see what happened.
 // Execute it a second time to see if the cached versions were loaded
-foreach ($states as $state) {
-    if (!empty($state)) {
-        $state = trim($state);
+foreach ($queries as $query) {
+    if (!empty($query)) {
+        $query = trim($query);
 
         // Set a new query
-        $bing->setQuery($state);
+        $bing->setQuery($query);
 
-        // Get image info, which also stores cache. 
-        // @todo Well, getting image info to store cache seems crazy but...
-        $image = $bing->getImageInfo();
+        // Fetch image, which also stores cache (as cache is enabled)
+        $bing->fetch();
         echo 'INFO: Searched for '.$bing->getQuery().PHP_EOL;
     }
 }
 
-// The log. Will show if cache was stored, or if images were taken from cache
+// Let's show the log, if present
 if (!empty($bing->log)) {
     print_r($bing->log);
 }

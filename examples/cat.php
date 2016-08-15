@@ -1,20 +1,29 @@
 <?php
+/**
+ * When using composer, do this instead
+ * require __DIR__ . "/../vendor/autoload.php";
+*/
+require __DIR__ . "/../src/BingImageSearch.php";
 
-require '../src/BingImageSearch.php';
-
-$bing = new BingImageSearch();
+$bing = new Philip\BingImageSearch();
 
 // Your Key
-$bing->setApiKey('YOUR KEY HERE');
+$bing->setApiKey('YOUR API KEY HERE');
+
+// Enable cache, and choose location
+$bing->enableCache('/tmp/bing_result_cache.sqlite3');
 
 // We'll search for a 'Happy Cat' image
 $bing->setQuery('Happy Cat');
 
-// Get image info, by default a random image
-$image = $bing->getImageInfo();
+// Choose a random image
+$image_json = $bing->pickRandomImage();
 
-// Example output
-echo '<img src="'.$image['url'].'" width="'.$image['width'].'" height="'.$image['height'].'"/>'.PHP_EOL;
+// Output image as HTML
+$html = $bing->outputImageHtml($image_json, 'main');
+echo $html;
 
-// See what information is available
-print_r($image);
+// Let's show the log, if present
+if (!empty($bing->log)) {
+    print_r($bing->log);
+}
