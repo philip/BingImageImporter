@@ -3,7 +3,7 @@
  * When using composer, do this instead
  * require __DIR__ . "/../vendor/autoload.php";
 */
-require __DIR__ . "/../src/BingImageSearch.php";
+require __DIR__.'/../src/BingImageSearch.php';
 
 $bing = new Philip\BingImageSearch();
 

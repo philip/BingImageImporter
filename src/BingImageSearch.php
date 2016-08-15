@@ -1,4 +1,5 @@
 <?php
+
 namespace Philip;
 
 /*
@@ -84,7 +85,6 @@ class BingImageSearch
      */
     public $log = array();
 
-
     /**
      * Base URL for the bing request.
      *
@@ -141,18 +141,21 @@ class BingImageSearch
      *
      * @param $filepath Path to the sqlite db file
      *
-     * @return boolean True on success, false on failure
+     * @return bool True on success, false on failure
      */
-    public function enableCache($filepath) {
+    public function enableCache($filepath)
+    {
         $this->cache_sqlite_db = $filepath;
         if (!file_exists($filepath)) {
-            $this->log[] = "Cache table did not exist, will attempt to create it now";
+            $this->log[] = 'Cache table did not exist, will attempt to create it now';
             if (!$this->createCacheTable($filepath)) {
                 $this->log[] = "I could not create the cache table at $filepath";
+
                 return false;
             }
         }
         $this->cache_enabled = true;
+
         return true;
     }
 
@@ -160,38 +163,38 @@ class BingImageSearch
      * Disable cache. Sets internal cache_enabled var to false.
      *
      * @param void
-     *
-     * @return void
      */
-    public function disableCache() {
+    public function disableCache()
+    {
         $this->cache_enabled = false;
     }
 
     /**
      * Whether to require cache.
      *
-     * @param boolean $toggle True to require cache, otherwise false (default)
-     *
-     * @return void
+     * @param bool $toggle True to require cache, otherwise false (default)
      */
-    public function requireCache($toggle = false) {
+    public function requireCache($toggle = false)
+    {
         $this->cache_required = (bool) $toggle;
     }
-    
+
     /**
      * Fetch result from Bing site
-     * Requires API key to be set
+     * Requires API key to be set.
      *
      * @param void
      *
      * @return string Result (JSON) from the search, or false on failure
      */
-    private function fetchRemote() {
+    private function fetchRemote()
+    {
         if (empty($this->bing_api_key)) {
-            $this->log[] = "Required Bing API key not set, cannot fetchRemote";
+            $this->log[] = 'Required Bing API key not set, cannot fetchRemote';
+
             return false;
         }
-        $auth = base64_encode($this->bing_api_key.":".$this->bing_api_key);
+        $auth = base64_encode($this->bing_api_key.':'.$this->bing_api_key);
         $context = array(
             'http' => array(
                 'request_fulluri' => true,
@@ -200,47 +203,54 @@ class BingImageSearch
             ),
         );
         $context = stream_context_create($context);
-        $query = '?$format=json&Query=%27'. urlencode($this->query).'%27';
+        $query = '?$format=json&Query=%27'.urlencode($this->query).'%27';
 
         $contents = file_get_contents(self::BING_BASEURL.'Image'.$query, 0, $context);
         if (empty($contents)) {
             return false;
         }
+
         return $contents;
     }
 
     /**
-     * Fetch local cached Bing result
+     * Fetch local cached Bing result.
      *
      * @param void
      *
      * @return string Local result from the search on success, false it not available
      */
-    private function fetchLocal() {
+    private function fetchLocal()
+    {
         if (empty($this->cache_sqlite_db)) {
-            $this->log[] = "Cache db does not exist, cannot fetchLocal";
+            $this->log[] = 'Cache db does not exist, cannot fetchLocal';
+
             return false;
         }
         $db = new \SQLite3($this->cache_sqlite_db);
-        $sql = "SELECT result FROM bing_results WHERE query = '".$db->escapeString($this->query) . "'";
+        $sql = "SELECT result FROM bing_results WHERE query = '".$db->escapeString($this->query)."'";
         $res = $db->querySingle($sql);
         if (!$res) {
             $this->log[] = "A fetchLocal() query ($sql) did not find a result";
+
             return false;
         }
+
         return $res;
     }
 
     /**
-     * Fetch bing search result, either local or remote (depending on other settings)
+     * Fetch bing search result, either local or remote (depending on other settings).
      *
      * @param void
      *
      * @return mixed Local or remote bing result from the search on success, false if not available
      */
-    public function fetch() {
+    public function fetch()
+    {
         if (empty($this->query)) {
-            $this->log[] = "Query was not defined. Pass one in";
+            $this->log[] = 'Query was not defined. Pass one in';
+
             return false;
         }
 
@@ -249,6 +259,7 @@ class BingImageSearch
             $tmp = $this->fetchLocal($this->query);
             if ($tmp) {
                 $this->log[] = "Found cache for query {$this->query}";
+
                 return $tmp;
             } else {
                 $this->log[] = "Did not have cache for {$this->query}, performing a remote search now";
@@ -257,6 +268,7 @@ class BingImageSearch
 
         if ($this->cache_required) {
             $this->log[] = 'Cache is required, yet query not found in cache. Exiting.';
+
             return false;
         }
 
@@ -266,61 +278,66 @@ class BingImageSearch
                 $this->log[] = "Attempted to insert cached result for query {$this->query}";
                 $this->cacheResult($this->query, $c);
             }
+
             return $c;
         }
+
         return false;
     }
 
     /**
-     * Output image binary
+     * Output image binary.
      * 
      * @param $method Method for choosing image, choices include:
      *   'random' to choose a random image from the result
      *   'first' to choose the first image from the result
-     *
      * @param $size Which size to return, defaults to main
      *   'main' returns the main image
      *   'thumbnail' returns the thumbnail version of the image
      * 
      * @return string Image, in binary form
      */
-    public function outputImageBinary($result, $type = 'main') {
+    public function outputImageBinary($result, $type = 'main')
+    {
         if ($type !== 'main' && $type !== 'thumbnail') {
             $this->log[] = "Must choose either main or thumbnail, not $type";
+
             return false;
         }
         if (headers_sent($file, $line)) {
             trigger_error("Header information was already sent, so cannot output image. See $file $line.", E_USER_ERROR);
+
             return false;
         }
         $imageinfo = json_decode($result, true);
         if ($type === 'thumbnail') {
-            $ct  = $imageinfo['Thumbnail']['ContentType'];
+            $ct = $imageinfo['Thumbnail']['ContentType'];
             $url = $imageinfo['Thumbnail']['MediaUrl'];
         } else {
-            $ct  = $imageinfo['ContentType'];
+            $ct = $imageinfo['ContentType'];
             $url = $imageinfo['MediaUrl'];
         }
-        header('Content-Type: '. $ct);
+        header('Content-Type: '.$ct);
         readfile($url);
     }
 
     /**
-     * Output HTML markup to view remote image
+     * Output HTML markup to view remote image.
      * 
      * @param $method Method for choosing image, choices include:
      *   'random' to choose a random image from the result
      *   'first' to choose the first image from the result
-     *
      * @param $size Which size to return, defaults to main
      *   'main' returns the main image
      *   'thumbnail' returns the thumbnail version of the image
      * 
      * @return string Image, in binary form
      */
-    public function outputImageHtml($result, $type = 'main') {
+    public function outputImageHtml($result, $type = 'main')
+    {
         if ($type !== 'main' && $type !== 'thumbnail') {
             $this->log[] = "Must choose either main or thumbnail, not $type";
+
             return false;
         }
         $imageinfo = json_decode($result, true);
@@ -333,39 +350,44 @@ class BingImageSearch
             $height = $imageinfo['Height'];
             $url = $imageinfo['MediaUrl'];
         }
+
         return '<img src="'.$url.'" width="'.$width.'" height="'.$height.'"/>'.PHP_EOL;
     }
 
     /**
      * Pick a rand image from a result.
-     * Also fetches a new result if one is not passed in
+     * Also fetches a new result if one is not passed in.
      * 
      * @param $result string Image result
      *
      * @return array Image information on success, false on failure
      */
-    public function pickRandomImage($result = "") {
+    public function pickRandomImage($result = '')
+    {
         if (empty($result)) {
             $result = $this->fetch();
         }
         $images = json_decode($result, true);
         $images = $images['d']['results'];
         if (!empty($images)) {
-            $key  = array_rand($images);
+            $key = array_rand($images);
+
             return json_encode($images[$key]);
         }
+
         return false;
     }
 
     /**
      * Pick first image from a result
-     * Also fetches a new result if one is not passed in
+     * Also fetches a new result if one is not passed in.
      * 
      * @param $result string Image result
      *
      * @return array Image information on success, false on failure
      */
-    public function pickFirstImage($result = "") {
+    public function pickFirstImage($result = '')
+    {
         if (empty($result)) {
             $result = $this->fetch();
         }
@@ -373,6 +395,7 @@ class BingImageSearch
         if (!empty($images['d']['results'][0])) {
             return json_encode($images['d']['results'][0]);
         }
+
         return false;
     }
 
@@ -406,10 +429,11 @@ class BingImageSearch
         if (!$db->query($sql)) {
             return false;
         }
+
         return true;
     }
 
-     /**
+    /**
      * Save cache results to an SQLite database.
      *
      * @todo check if file exists?
@@ -433,6 +457,7 @@ class BingImageSearch
         if ($stmt->execute()) {
             return true;
         }
+
         return false;
     }
 }
